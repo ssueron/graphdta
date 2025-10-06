@@ -17,3 +17,6 @@ data/processed/
 data/processed/
 *.pt
 
+data/processed/
+*.pt
+
