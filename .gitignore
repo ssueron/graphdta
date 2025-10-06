@@ -7,3 +7,7 @@ data/processed/davis_train.pt
 data/processed/kiba_test.pt
 data/processed/kiba_train.pt
 
+node_modules/
+.DS_Store
+*.log
+.env

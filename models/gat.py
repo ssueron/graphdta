@@ -7,7 +7,7 @@ from torch_geometric.nn import global_max_pool as gmp
 
 # GAT  model
 class GATNet(torch.nn.Module):
-    def __init__(self, num_features_xd=78, n_output=1, num_features_xt=25,
+    def __init__(self, num_features_xd=78, n_output=1, num_features_xt=27,
                      n_filters=32, embed_dim=128, output_dim=128, dropout=0.2):
         super(GATNet, self).__init__()
 
@@ -17,9 +17,12 @@ class GATNet(torch.nn.Module):
         self.fc_g1 = nn.Linear(output_dim, output_dim)
 
         # 1D convolution on protein sequence
+        # num_features_xt=27 (A-Z + gap), +1 for padding token = 28 total
         self.embedding_xt = nn.Embedding(num_features_xt + 1, embed_dim)
-        self.conv_xt1 = nn.Conv1d(in_channels=1000, out_channels=n_filters, kernel_size=8)
-        self.fc_xt1 = nn.Linear(32*121, output_dim)
+        # Conv1d expects [batch, channels, length]
+        # Embedding outputs [batch, seq, embed] which we transpose to [batch, embed, seq]
+        self.conv_xt1 = nn.Conv1d(in_channels=embed_dim, out_channels=n_filters, kernel_size=8)
+        self.fc_xt1 = nn.Linear(32*78, output_dim)
 
         # combined layers
         self.fc1 = nn.Linear(256, 1024)
@@ -46,11 +49,13 @@ class GATNet(torch.nn.Module):
         # protein input feed-forward:
         target = data.target
         embedded_xt = self.embedding_xt(target)
+        # Transpose for Conv1d: [batch, seq, embed] -> [batch, embed, seq]
+        embedded_xt = embedded_xt.permute(0, 2, 1)
         conv_xt = self.conv_xt1(embedded_xt)
         conv_xt = self.relu(conv_xt)
 
         # flatten
-        xt = conv_xt.view(-1, 32 * 121)
+        xt = conv_xt.view(-1, 32 * 78)
         xt = self.fc_xt1(xt)
 
         # concat

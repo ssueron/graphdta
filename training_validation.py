@@ -42,7 +42,9 @@ def predicting(model, device, loader):
     return total_labels.numpy().flatten(),total_preds.numpy().flatten()
 
 
-datasets = [['davis','kiba'][int(sys.argv[1])]] 
+# Dataset options: 0=davis, 1=kiba, 2=chembl_pretraining, 3=pkis2_finetuning
+dataset_options = ['davis', 'kiba', 'chembl_pretraining', 'pkis2_finetuning']
+datasets = [dataset_options[int(sys.argv[1])]]
 modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet][int(sys.argv[2])]
 model_st = modeling.__name__
 
@@ -66,7 +68,10 @@ for dataset in datasets:
     processed_data_file_train = 'data/processed/' + dataset + '_train.pt'
     processed_data_file_test = 'data/processed/' + dataset + '_test.pt'
     if ((not os.path.isfile(processed_data_file_train)) or (not os.path.isfile(processed_data_file_test))):
-        print('please run create_data.py to prepare data in pytorch format!')
+        if dataset in ['davis', 'kiba']:
+            print('please run create_data.py to prepare data in pytorch format!')
+        else:
+            print('please run create_data_chembl.py to prepare data in pytorch format!')
     else:
         train_data = TestbedDataset(root='data', dataset=dataset+'_train')
         test_data = TestbedDataset(root='data', dataset=dataset+'_test')
