@@ -8,6 +8,11 @@ from models.gat import GATNet
 from models.gat_gcn import GAT_GCN
 from models.gcn import GCNNet
 from models.ginconv import GINConvNet
+# Import old models for full-sequence datasets (davis, kiba)
+from models.gat_old import GATNet as GATNet_old
+from models.gat_gcn_old import GAT_GCN as GAT_GCN_old
+from models.gcn_old import GCNNet as GCNNet_old
+from models.ginconv_old import GINConvNet as GINConvNet_old
 from utils import *
 
 # training function at each epoch
@@ -45,8 +50,18 @@ def predicting(model, device, loader):
 # Dataset options: 0=davis, 1=kiba, 2=chembl_pretraining, 3=pkis2_finetuning
 dataset_options = ['davis', 'kiba', 'chembl_pretraining', 'pkis2_finetuning']
 datasets = [dataset_options[int(sys.argv[1])]]
-modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet][int(sys.argv[2])]
-model_st = modeling.__name__
+
+# Select model architecture based on dataset
+# Use _old models for davis/kiba (full sequences), regular models for chembl/pkis2 (KLIFS sequences)
+dataset_name = datasets[0]
+if dataset_name in ['davis', 'kiba']:
+    # Full protein sequences - use _old models
+    modeling = [GINConvNet_old, GATNet_old, GAT_GCN_old, GCNNet_old][int(sys.argv[2])]
+else:
+    # KLIFS pocket sequences - use regular models
+    modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet][int(sys.argv[2])]
+
+model_st = modeling.__name__.replace('_old', '')  # Remove _old suffix for naming
 
 cuda_name = "cuda:0"
 if len(sys.argv)>3:
