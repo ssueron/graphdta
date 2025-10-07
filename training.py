@@ -48,7 +48,7 @@ def predicting(model, device, loader):
 
 
 # Dataset options: 0=davis, 1=kiba, 2=chembl_pretraining, 3=pkis2_finetuning
-dataset_options = ['davis', 'kiba', 'chembl_pretraining', 'pkis2_finetuning']
+dataset_options = ['davis', 'kiba', 'chembl_pretraining', 'pkis2_finetuning', 'davis_klifs', 'kiba_klifs']
 datasets = [dataset_options[int(sys.argv[1])]]
 
 # Select model architecture based on dataset
