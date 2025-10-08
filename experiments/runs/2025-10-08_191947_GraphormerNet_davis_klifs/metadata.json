@@ -1,0 +1,14 @@
+{
+  "model": "GraphormerNet",
+  "dataset": "davis_klifs",
+  "timestamp": "2025-10-08T19:19:47.153558",
+  "git_commit": "c7c7702",
+  "hyperparameters": {
+    "lr": 0.0005,
+    "batch_size": 512,
+    "epochs": 1000,
+    "model": "GraphormerNet",
+    "dataset": "davis_klifs"
+  },
+  "experiment_dir": "experiments/runs/2025-10-08_191947_GraphormerNet_davis_klifs"
+}

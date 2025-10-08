@@ -10,8 +10,13 @@ from models.gat import GATNet
 from models.gat_gcn import GAT_GCN
 from models.gcn import GCNNet
 from models.ginconv import GINConvNet
+from models.pna import PNANet
+from models.graphormer import GraphormerNet
 from utils import *
 from utils_experiment import ExperimentManager
+from utils_degree import get_or_compute_degree
+from utils_graphormer import get_or_preprocess_graphormer
+from utils_dataloader import GraphormerDataLoader
 
 def train(model, device, train_loader, optimizer, epoch, loss_fn, log_interval):
     print('Training on {} samples...'.format(len(train_loader.dataset)))
@@ -49,7 +54,7 @@ def predicting(model, device, loader):
 
 parser = argparse.ArgumentParser(description='Train GraphDTA model')
 parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning')
-parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet')
+parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=GraphormerNet')
 parser.add_argument('cuda', type=int, default=0, help='CUDA device index')
 parser.add_argument('--resume', action='store_true', help='Resume from latest checkpoint')
 parser.add_argument('--exp-name', type=str, default=None, help='Custom experiment name')
@@ -63,7 +68,7 @@ args = parser.parse_args()
 dataset_options = ['davis_klifs', 'kiba_klifs', 'chembl_pretraining', 'pkis2_finetuning']
 datasets = [dataset_options[args.dataset]]
 
-modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet][args.model]
+modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, GraphormerNet][args.model]
 model_st = modeling.__name__
 
 cuda_name = f"cuda:{args.cuda}"
@@ -98,11 +103,22 @@ for dataset in datasets:
         train_data = TestbedDataset(root='data', dataset=dataset+'_train')
         test_data = TestbedDataset(root='data', dataset=dataset+'_test')
 
-        train_loader = DataLoader(train_data, batch_size=TRAIN_BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(test_data, batch_size=TEST_BATCH_SIZE, shuffle=False)
+        if model_st == 'GraphormerNet':
+            graphormer_cache = get_or_preprocess_graphormer(dataset)
+            train_loader = GraphormerDataLoader(train_data, graphormer_cache['train'], TRAIN_BATCH_SIZE, shuffle=True)
+            test_loader = GraphormerDataLoader(test_data, graphormer_cache['test'], TEST_BATCH_SIZE, shuffle=False)
+        else:
+            train_loader = DataLoader(train_data, batch_size=TRAIN_BATCH_SIZE, shuffle=True)
+            test_loader = DataLoader(test_data, batch_size=TEST_BATCH_SIZE, shuffle=False)
 
         device = torch.device(cuda_name if torch.cuda.is_available() else "cpu")
-        model = modeling().to(device)
+
+        if model_st == 'PNANet':
+            deg = get_or_compute_degree(dataset)
+            model = modeling(deg=deg).to(device)
+        else:
+            model = modeling().to(device)
+
         loss_fn = nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 

@@ -1,0 +1,14 @@
+{
+  "model": "PNANet",
+  "dataset": "davis_klifs",
+  "timestamp": "2025-10-08T18:48:55.161684",
+  "git_commit": "c7c7702",
+  "hyperparameters": {
+    "lr": 0.0005,
+    "batch_size": 512,
+    "epochs": 1000,
+    "model": "PNANet",
+    "dataset": "davis_klifs"
+  },
+  "experiment_dir": "experiments/runs/2025-10-08_184855_PNANet_davis_klifs"
+}
