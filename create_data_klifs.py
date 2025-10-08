@@ -76,10 +76,10 @@ for dataset_name in datasets:
 
         target_seqs_encoded = [seq_cat(seq) for seq in target_sequences]
 
-        data = TestbedDataset(root='data', dataset=f'{dataset_name}_{split}_klifs',
+        data = TestbedDataset(root='data', dataset=f'{dataset_name}_klifs_{split}',
                             xd=compound_iso_smiles, xt=target_seqs_encoded,
                             y=affinities, smile_graph=smile_graph)
 
-        print(f'Saved to data/processed/{dataset_name}_{split}_klifs.pt')
+        print(f'Saved to data/processed/{dataset_name}_klifs_{split}.pt')
 
 print('Done!')
