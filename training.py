@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import sys, os
+import argparse
+import time
 from random import shuffle
 import torch
 import torch.nn as nn
@@ -8,17 +10,13 @@ from models.gat import GATNet
 from models.gat_gcn import GAT_GCN
 from models.gcn import GCNNet
 from models.ginconv import GINConvNet
-# Import old models for full-sequence datasets (davis, kiba)
-from models.gat_old import GATNet as GATNet_old
-from models.gat_gcn_old import GAT_GCN as GAT_GCN_old
-from models.gcn_old import GCNNet as GCNNet_old
-from models.ginconv_old import GINConvNet as GINConvNet_old
 from utils import *
+from utils_experiment import ExperimentManager
 
-# training function at each epoch
-def train(model, device, train_loader, optimizer, epoch):
+def train(model, device, train_loader, optimizer, epoch, loss_fn, log_interval):
     print('Training on {} samples...'.format(len(train_loader.dataset)))
     model.train()
+    total_loss = 0
     for batch_idx, data in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
@@ -26,12 +24,14 @@ def train(model, device, train_loader, optimizer, epoch):
         loss = loss_fn(output, data.y.view(-1, 1).float().to(device))
         loss.backward()
         optimizer.step()
-        if batch_idx % LOG_INTERVAL == 0:
+        total_loss += loss.item()
+        if batch_idx % log_interval == 0:
             print('Train epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch,
                                                                            batch_idx * len(data.x),
                                                                            len(train_loader.dataset),
                                                                            100. * batch_idx / len(train_loader),
                                                                            loss.item()))
+    return total_loss / len(train_loader)
 
 def predicting(model, device, loader):
     model.eval()
@@ -47,76 +47,104 @@ def predicting(model, device, loader):
     return total_labels.numpy().flatten(),total_preds.numpy().flatten()
 
 
-# Dataset options: 0=davis, 1=kiba, 2=chembl_pretraining, 3=pkis2_finetuning
-dataset_options = ['davis', 'kiba', 'chembl_pretraining', 'pkis2_finetuning', 'davis_klifs', 'kiba_klifs']
-datasets = [dataset_options[int(sys.argv[1])]]
+parser = argparse.ArgumentParser(description='Train GraphDTA model')
+parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning')
+parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet')
+parser.add_argument('cuda', type=int, default=0, help='CUDA device index')
+parser.add_argument('--resume', action='store_true', help='Resume from latest checkpoint')
+parser.add_argument('--exp-name', type=str, default=None, help='Custom experiment name')
+parser.add_argument('--batch-size', type=int, default=512, help='Batch size')
+parser.add_argument('--lr', type=float, default=0.0005, help='Learning rate')
+parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs')
+parser.add_argument('--save-freq', type=int, default=10, help='Save checkpoint every N epochs')
 
-# Select model architecture based on dataset
-# Use _old models for davis/kiba (full sequences), regular models for chembl/pkis2 (KLIFS sequences)
-dataset_name = datasets[0]
-if dataset_name in ['davis', 'kiba']:
-    # Full protein sequences - use _old models
-    modeling = [GINConvNet_old, GATNet_old, GAT_GCN_old, GCNNet_old][int(sys.argv[2])]
-else:
-    # KLIFS pocket sequences - use regular models
-    modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet][int(sys.argv[2])]
+args = parser.parse_args()
 
-model_st = modeling.__name__.replace('_old', '')  # Remove _old suffix for naming
+dataset_options = ['davis_klifs', 'kiba_klifs', 'chembl_pretraining', 'pkis2_finetuning']
+datasets = [dataset_options[args.dataset]]
 
-cuda_name = "cuda:0"
-if len(sys.argv)>3:
-    cuda_name = "cuda:" + str(int(sys.argv[3]))
+modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet][args.model]
+model_st = modeling.__name__
+
+cuda_name = f"cuda:{args.cuda}"
 print('cuda_name:', cuda_name)
 
-TRAIN_BATCH_SIZE = 512
-TEST_BATCH_SIZE = 512
-LR = 0.0005
+TRAIN_BATCH_SIZE = args.batch_size
+TEST_BATCH_SIZE = args.batch_size
+LR = args.lr
 LOG_INTERVAL = 20
-NUM_EPOCHS = 1000
+NUM_EPOCHS = args.epochs
 
 print('Learning rate: ', LR)
 print('Epochs: ', NUM_EPOCHS)
 
-# Main program: iterate over different datasets
 for dataset in datasets:
     print('\nrunning on ', model_st + '_' + dataset )
     processed_data_file_train = 'data/processed/' + dataset + '_train.pt'
     processed_data_file_test = 'data/processed/' + dataset + '_test.pt'
     if ((not os.path.isfile(processed_data_file_train)) or (not os.path.isfile(processed_data_file_test))):
-        if dataset in ['davis', 'kiba']:
-            print('please run create_data.py to prepare data in pytorch format!')
-        else:
-            print('please run create_data_chembl.py to prepare data in pytorch format!')
+        print(f'please run: python create_data_unified.py {dataset}')
     else:
+        hyperparams = {
+            'lr': LR,
+            'batch_size': TRAIN_BATCH_SIZE,
+            'epochs': NUM_EPOCHS,
+            'model': model_st,
+            'dataset': dataset
+        }
+        exp_manager = ExperimentManager(model_st, dataset, hyperparams, args.exp_name)
+        print(f'Experiment directory: {exp_manager.exp_dir}')
+
         train_data = TestbedDataset(root='data', dataset=dataset+'_train')
         test_data = TestbedDataset(root='data', dataset=dataset+'_test')
-        
-        # make data PyTorch mini-batch processing ready
+
         train_loader = DataLoader(train_data, batch_size=TRAIN_BATCH_SIZE, shuffle=True)
         test_loader = DataLoader(test_data, batch_size=TEST_BATCH_SIZE, shuffle=False)
 
-        # training the model
         device = torch.device(cuda_name if torch.cuda.is_available() else "cpu")
         model = modeling().to(device)
         loss_fn = nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+
+        start_epoch = 0
         best_mse = 1000
         best_ci = 0
         best_epoch = -1
-        model_file_name = 'model_' + model_st + '_' + dataset +  '.model'
-        result_file_name = 'result_' + model_st + '_' + dataset +  '.csv'
-        for epoch in range(NUM_EPOCHS):
-            train(model, device, train_loader, optimizer, epoch+1)
-            G,P = predicting(model, device, test_loader)
-            ret = [rmse(G,P),mse(G,P),pearson(G,P),spearman(G,P),ci(G,P)]
-            if ret[1]<best_mse:
-                torch.save(model.state_dict(), model_file_name)
-                with open(result_file_name,'w') as f:
-                    f.write(','.join(map(str,ret)))
+
+        if args.resume:
+            checkpoint = exp_manager.load_checkpoint('latest')
+            if checkpoint:
+                model.load_state_dict(checkpoint['model_state_dict'])
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                start_epoch = checkpoint['epoch']
+                best_mse = checkpoint['metrics'][1]
+                best_ci = checkpoint['metrics'][4]
+                print(f'Resumed from epoch {start_epoch}, best_mse: {best_mse:.4f}, best_ci: {best_ci:.4f}')
+
+        start_time = time.time()
+
+        for epoch in range(start_epoch, NUM_EPOCHS):
+            train_loss = train(model, device, train_loader, optimizer, epoch+1, loss_fn, LOG_INTERVAL)
+            G, P = predicting(model, device, test_loader)
+            ret = [rmse(G,P), mse(G,P), pearson(G,P), spearman(G,P), ci(G,P)]
+
+            exp_manager.log_epoch(epoch+1, train_loss, ret)
+
+            is_best = ret[1] < best_mse
+            if is_best:
                 best_epoch = epoch+1
                 best_mse = ret[1]
                 best_ci = ret[-1]
-                print('rmse improved at epoch ', best_epoch, '; best_mse,best_ci:', best_mse,best_ci,model_st,dataset)
+                print('rmse improved at epoch ', best_epoch, '; best_mse,best_ci:', best_mse, best_ci, model_st, dataset)
             else:
-                print(ret[1],'No improvement since epoch ', best_epoch, '; best_mse,best_ci:', best_mse,best_ci,model_st,dataset)
+                print(ret[1], 'No improvement since epoch ', best_epoch, '; best_mse,best_ci:', best_mse, best_ci, model_st, dataset)
+
+            if (epoch+1) % args.save_freq == 0 or is_best:
+                exp_manager.save_checkpoint(model, optimizer, epoch, ret, is_best=is_best)
+
+        duration_hours = (time.time() - start_time) / 3600
+        exp_manager.save_final_results(P, G, ret)
+        exp_manager.update_summary(ret, best_epoch, NUM_EPOCHS, duration_hours)
+
+        print(f'\nTraining completed! Results saved to {exp_manager.exp_dir}')
 
