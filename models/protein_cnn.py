@@ -13,14 +13,14 @@ class DeepProteinCNN(nn.Module):
         self.conv1_3 = nn.Conv1d(32, 32, kernel_size=4)
         self.pool1 = nn.MaxPool1d(2)
 
-        self.conv2_1 = nn.Conv1d(32, 64, kernel_size=8)
-        self.conv2_2 = nn.Conv1d(64, 64, kernel_size=8)
-        self.conv2_3 = nn.Conv1d(64, 64, kernel_size=8)
+        self.conv2_1 = nn.Conv1d(32, 64, kernel_size=4)
+        self.conv2_2 = nn.Conv1d(64, 64, kernel_size=4)
+        self.conv2_3 = nn.Conv1d(64, 64, kernel_size=4)
         self.pool2 = nn.MaxPool1d(2)
 
-        self.conv3_1 = nn.Conv1d(64, 96, kernel_size=12)
-        self.conv3_2 = nn.Conv1d(96, 96, kernel_size=12)
-        self.conv3_3 = nn.Conv1d(96, 96, kernel_size=12)
+        self.conv3_1 = nn.Conv1d(64, 96, kernel_size=4)
+        self.conv3_2 = nn.Conv1d(96, 96, kernel_size=4)
+        self.conv3_3 = nn.Conv1d(96, 96, kernel_size=4)
         self.pool3 = nn.MaxPool1d(2)
 
         self.dropout = nn.Dropout(dropout)
