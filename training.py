@@ -12,6 +12,11 @@ from models.gcn import GCNNet
 from models.ginconv import GINConvNet
 from models.pna import PNANet
 from models.graphormer import GraphormerNet
+from models.ginconv_deep import GINConvNet_Deep
+from models.gat_deep import GATNet_Deep
+from models.gat_gcn_deep import GAT_GCN_Deep
+from models.gcn_deep import GCNNet_Deep
+from models.pna_deep import PNANet_Deep
 from utils import *
 from utils_experiment import ExperimentManager
 from utils_degree import get_or_compute_degree
@@ -54,7 +59,7 @@ def predicting(model, device, loader):
 
 parser = argparse.ArgumentParser(description='Train GraphDTA model')
 parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning')
-parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=GraphormerNet')
+parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=GraphormerNet, 6=GINConvNet_Deep, 7=GATNet_Deep, 8=GAT_GCN_Deep, 9=GCNNet_Deep, 10=PNANet_Deep')
 parser.add_argument('cuda', type=int, default=0, help='CUDA device index')
 parser.add_argument('--resume', action='store_true', help='Resume from latest checkpoint')
 parser.add_argument('--exp-name', type=str, default=None, help='Custom experiment name')
@@ -68,7 +73,8 @@ args = parser.parse_args()
 dataset_options = ['davis_klifs', 'kiba_klifs', 'chembl_pretraining', 'pkis2_finetuning']
 datasets = [dataset_options[args.dataset]]
 
-modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, GraphormerNet][args.model]
+modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, GraphormerNet,
+            GINConvNet_Deep, GATNet_Deep, GAT_GCN_Deep, GCNNet_Deep, PNANet_Deep][args.model]
 model_st = modeling.__name__
 
 cuda_name = f"cuda:{args.cuda}"
@@ -113,7 +119,7 @@ for dataset in datasets:
 
         device = torch.device(cuda_name if torch.cuda.is_available() else "cpu")
 
-        if model_st == 'PNANet':
+        if model_st in ['PNANet', 'PNANet_Deep']:
             deg = get_or_compute_degree(dataset)
             model = modeling(deg=deg).to(device)
         else:
