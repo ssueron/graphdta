@@ -101,20 +101,6 @@ for dataset in datasets:
     if ((not os.path.isfile(processed_data_file_train)) or (not os.path.isfile(processed_data_file_test))):
         print(f'please run: python create_data_unified.py {dataset}')
     else:
-        hyperparams = {
-            'lr': LR,
-            'batch_size': TRAIN_BATCH_SIZE,
-            'epochs': NUM_EPOCHS,
-            'model': model_st,
-            'dataset': dataset,
-            'protein_model': protein_model_st,
-            'protein_model_index': args.protein_model,
-            'protein_vocab_size': protein_vocab_size,
-            'protein_seq_len': protein_seq_len
-        }
-        exp_manager = ExperimentManager(model_st, dataset, hyperparams, args.exp_name)
-        print(f'Experiment directory: {exp_manager.exp_dir}')
-
         train_data = TestbedDataset(root='data', dataset=dataset+'_train')
         test_data = TestbedDataset(root='data', dataset=dataset+'_test')
 
@@ -129,6 +115,20 @@ for dataset in datasets:
             'num_features_xt': protein_vocab_size,
             'seq_len': protein_seq_len
         }
+
+        hyperparams = {
+            'lr': LR,
+            'batch_size': TRAIN_BATCH_SIZE,
+            'epochs': NUM_EPOCHS,
+            'model': model_st,
+            'dataset': dataset,
+            'protein_model': protein_model_st,
+            'protein_model_index': args.protein_model,
+            'protein_vocab_size': protein_vocab_size,
+            'protein_seq_len': protein_seq_len
+        }
+        exp_manager = ExperimentManager(model_st, dataset, hyperparams, args.exp_name)
+        print(f'Experiment directory: {exp_manager.exp_dir}')
 
         train_loader = DataLoader(train_data, batch_size=TRAIN_BATCH_SIZE, shuffle=True)
         test_loader = DataLoader(test_data, batch_size=TEST_BATCH_SIZE, shuffle=False)
