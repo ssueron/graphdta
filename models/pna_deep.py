@@ -6,7 +6,7 @@ from .protein_cnn import DeepProteinCNN
 
 class PNANet_Deep(torch.nn.Module):
     def __init__(self, n_output=1, num_features_xd=78, num_features_xt=27,
-                 embed_dim=128, output_dim=128, dropout=0.1, deg=None):
+                 embed_dim=128, output_dim=128, dropout=0.1, deg=None, protein_encoder=None):
         super(PNANet_Deep, self).__init__()
 
         if deg is None:
@@ -30,7 +30,9 @@ class PNANet_Deep(torch.nn.Module):
 
         self.fc1_xd = nn.Linear(pna_hidden, output_dim)
 
-        self.protein_encoder = DeepProteinCNN(num_features_xt, embed_dim, output_dim, dropout)
+        if protein_encoder is None:
+            protein_encoder = DeepProteinCNN(num_features_xt, embed_dim, output_dim, dropout)
+        self.protein_encoder = protein_encoder
 
         self.fc1 = nn.Linear(256, 1024)
         self.fc2 = nn.Linear(1024, 1024)
