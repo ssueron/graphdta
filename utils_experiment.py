@@ -111,6 +111,8 @@ class ExperimentManager:
             'experiment_id': exp_id,
             'model': self.model_name,
             'dataset': self.dataset_name,
+            'protein_model': self.hyperparams.get('protein_model', 'N/A'),
+            'protein_model_index': self.hyperparams.get('protein_model_index', 'N/A'),
             'best_mse': best_metrics[1],
             'best_ci': best_metrics[4],
             'best_epoch': best_epoch,
@@ -119,13 +121,36 @@ class ExperimentManager:
             'timestamp': datetime.now().isoformat()
         }
 
-        file_exists = os.path.isfile(self.summary_csv)
+        fieldnames = list(summary_row.keys())
+        existing_rows = []
 
-        with open(self.summary_csv, 'a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=summary_row.keys())
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow(summary_row)
+        if os.path.isfile(self.summary_csv):
+            with open(self.summary_csv, 'r', newline='') as f:
+                reader = csv.DictReader(f)
+                existing_fieldnames = reader.fieldnames or []
+                for row in reader:
+                    existing_rows.append(row)
+
+            for key in existing_fieldnames:
+                if key not in fieldnames:
+                    fieldnames.append(key)
+
+            for row in existing_rows:
+                for key in fieldnames:
+                    row.setdefault(key, 'N/A')
+        else:
+            existing_fieldnames = []
+
+        for key in fieldnames:
+            summary_row.setdefault(key, 'N/A')
+
+        existing_rows.append(summary_row)
+
+        with open(self.summary_csv, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in existing_rows:
+                writer.writerow(row)
 
 def find_latest_experiment(model_name, dataset_name):
     runs_dir = os.path.join('experiments', 'runs')

@@ -101,7 +101,9 @@ for dataset in datasets:
             'batch_size': TRAIN_BATCH_SIZE,
             'epochs': NUM_EPOCHS,
             'model': model_st,
-            'dataset': dataset
+            'dataset': dataset,
+            'protein_model': protein_model_st,
+            'protein_model_index': args.protein_model
         }
         exp_manager = ExperimentManager(model_st, dataset, hyperparams, args.exp_name)
         print(f'Experiment directory: {exp_manager.exp_dir}')
