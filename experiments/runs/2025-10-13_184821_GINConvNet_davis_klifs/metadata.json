@@ -1,0 +1,14 @@
+{
+  "model": "GINConvNet",
+  "dataset": "davis_klifs",
+  "timestamp": "2025-10-13T18:48:21.759478",
+  "git_commit": "0d5983d",
+  "hyperparameters": {
+    "lr": 0.0005,
+    "batch_size": 512,
+    "epochs": 1000,
+    "model": "GINConvNet",
+    "dataset": "davis_klifs"
+  },
+  "experiment_dir": "experiments/runs/2025-10-13_184821_GINConvNet_davis_klifs"
+}
