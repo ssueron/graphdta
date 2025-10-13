@@ -4,6 +4,8 @@ import torch.nn.functional as F
 from torch.nn import Sequential, Linear, ReLU
 from torch_geometric.nn import GINConv, global_add_pool
 
+from .protein_cnn_simple import SimpleProteinCNN
+
 class GINConvNet(torch.nn.Module):
     def __init__(self, n_output=1, num_features_xd=78, output_dim=128, dropout=0.2, protein_encoder=None):
 
@@ -36,6 +38,8 @@ class GINConvNet(torch.nn.Module):
 
         self.fc1_xd = Linear(dim, output_dim)
 
+        if protein_encoder is None:
+            protein_encoder = SimpleProteinCNN(output_dim=output_dim, dropout=dropout)
         self.protein_encoder = protein_encoder
 
         self.fc1 = nn.Linear(256, 1024)

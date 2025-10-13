@@ -11,10 +11,6 @@ from models.gat_gcn import GAT_GCN
 from models.gcn import GCNNet
 from models.ginconv import GINConvNet
 from models.pna import PNANet
-from models.ginconv_deep import GINConvNet_Deep
-from models.gat_deep import GATNet_Deep
-from models.gat_gcn_deep import GAT_GCN_Deep
-from models.gcn_deep import GCNNet_Deep
 from models.pna_deep import PNANet_Deep
 from utils import *
 from utils_experiment import ExperimentManager
@@ -56,7 +52,7 @@ def predicting(model, device, loader):
 
 parser = argparse.ArgumentParser(description='Train GraphDTA model')
 parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning')
-parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=GINConvNet_Deep, 6=GATNet_Deep, 7=GAT_GCN_Deep, 8=GCNNet_Deep, 9=PNANet_Deep')
+parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=PNANet_Deep')
 parser.add_argument('cuda', type=int, default=0, help='CUDA device index')
 parser.add_argument('--resume', action='store_true', help='Resume from latest checkpoint')
 parser.add_argument('--exp-name', type=str, default=None, help='Custom experiment name')
@@ -70,8 +66,7 @@ args = parser.parse_args()
 dataset_options = ['davis_klifs', 'kiba_klifs', 'chembl_pretraining', 'pkis2_finetuning']
 datasets = [dataset_options[args.dataset]]
 
-modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet,
-            GINConvNet_Deep, GATNet_Deep, GAT_GCN_Deep, GCNNet_Deep, PNANet_Deep][args.model]
+modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, PNANet_Deep][args.model]
 model_st = modeling.__name__
 
 cuda_name = f"cuda:{args.cuda}"
@@ -161,4 +156,3 @@ for dataset in datasets:
         exp_manager.update_summary(ret, best_epoch, NUM_EPOCHS, duration_hours)
 
         print(f'\nTraining completed! Results saved to {exp_manager.exp_dir}')
-

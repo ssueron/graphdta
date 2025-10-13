@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_max_pool as gmp
 
+from .protein_cnn_simple import SimpleProteinCNN
+
 class GCNNet(torch.nn.Module):
     def __init__(self, n_output=1, num_features_xd=78, output_dim=128, dropout=0.2, protein_encoder=None):
 
@@ -17,6 +19,8 @@ class GCNNet(torch.nn.Module):
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
 
+        if protein_encoder is None:
+            protein_encoder = SimpleProteinCNN(output_dim=output_dim, dropout=dropout)
         self.protein_encoder = protein_encoder
 
         self.fc1 = nn.Linear(2*output_dim, 1024)
