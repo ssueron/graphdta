@@ -1,0 +1,32 @@
+target_name,excel_name,hgnc,uniprot,klifs_name,reason,issue
+AMPK-alpha1,AMPKa1,PRKAA1,Q13131,AMPKa1,Fuzzy match in Excel,Name similarity but not exact
+AMPK-alpha1,AMPKa2,PRKAA2,P54646,AMPKa2,Fuzzy match in Excel,Name similarity but not exact
+AURKC,AurA,AURKA,O14965,AurA,Fuzzy match in Excel,Name similarity but not exact
+AURKC,AurB,AURKB,Q96GD4,AurB,Fuzzy match in Excel,Name similarity but not exact
+BMPR1A,BMPR1B,BMPR1B,O00238,BMPR1B,Fuzzy match in Excel,Name similarity but not exact
+BMPR1A,BMPR2,BMPR2,Q13873,BMPR2,Fuzzy match in Excel,Name similarity but not exact
+CDC2L5,CDC2,CDK1,P06493,CDC2,Fuzzy match in Excel,Name similarity but not exact
+ERK1,Erk1,MAPK3,P27361,Erk1,Fuzzy match in Excel,Name similarity but not exact
+ERK2,Erk2,MAPK1,P28482,Erk2,Fuzzy match in Excel,Name similarity but not exact
+ERK8,JNK1,MAPK8,P45983,JNK1,Name variation: MAPK8,Known naming convention difference
+GSK3A,GSK3B,GSK3B,P49841,GSK3B,Fuzzy match in Excel,Name similarity but not exact
+JAK2(JH1domain-catalytic),JAK2,JAK2,O60674,JAK2,Fuzzy match in Excel,Name similarity but not exact
+JAK3(JH1domain-catalytic),JAK3,JAK3,P52333,JAK3,Fuzzy match in Excel,Name similarity but not exact
+MEK1,MAP2K1,MAP2K1,Q02750,MAP2K1,Name variation: MAP2K1,Known naming convention difference
+MEK2,MAP2K2,MAP2K2,P36507,MAP2K2,Name variation: MAP2K2,Known naming convention difference
+MEK4,MAP2K4,MAP2K4,P45985,MAP2K4,Name variation: MAP2K4,Known naming convention difference
+MEK6,MAP2K6,MAP2K6,P52564,MAP2K6,Name variation: MAP2K6,Known naming convention difference
+MRCKA,MRCKb,CDC42BPB,Q9Y5S2,MRCKb,Fuzzy match in Excel,Name similarity but not exact
+MST1,RON,MST1R,Q04912,RON,Fuzzy match in Excel,Name similarity but not exact
+NEK11,NEK1,NEK1,Q96PY6,NEK1,Fuzzy match in Excel,Name similarity but not exact
+PDGFRB,PDGFRa,PDGFRA,P16234,PDGFRa,Fuzzy match in Excel,Name similarity but not exact
+PKAC-alpha,PKACa,PRKACA,P17612,PKACa,Fuzzy match in Excel,Name similarity but not exact
+S6K1,p70S6K,RPS6KB1,P23443,p70S6K,Name variation: p70S6K,Known naming convention difference
+SIK,QSK,SIK3,Q9Y2K2,QSK,Fuzzy match in Excel,Name similarity but not exact
+SRPK3,SRPK1,SRPK1,Q96SB4,SRPK1,Fuzzy match in Excel,Name similarity but not exact
+SRPK3,SRPK2,SRPK2,P78362,SRPK2,Fuzzy match in Excel,Name similarity but not exact
+TAOK1,TAO3,TAOK3,Q9H2K8,TAO3,Fuzzy match in Excel,Name similarity but not exact
+TAOK2,TAO3,TAOK3,Q9H2K8,TAO3,Fuzzy match in Excel,Name similarity but not exact
+VEGFR2,KDR,KDR,P35968,KDR,Name variation: KDR,Known naming convention difference
+YANK2,YANK1,STK32A,Q8WU08,YANK1,Fuzzy match in Excel,Name similarity but not exact
+YANK3,YANK1,STK32A,Q8WU08,YANK1,Fuzzy match in Excel,Name similarity but not exact
