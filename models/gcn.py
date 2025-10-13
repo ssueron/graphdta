@@ -3,14 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_max_pool as gmp
 
-
-# GCN based model
 class GCNNet(torch.nn.Module):
-    def __init__(self, n_output=1, n_filters=32, embed_dim=128,num_features_xd=78, num_features_xt=27, output_dim=128, dropout=0.2):
+    def __init__(self, n_output=1, num_features_xd=78, output_dim=128, dropout=0.2, protein_encoder=None):
 
         super(GCNNet, self).__init__()
 
-        # SMILES graph branch
         self.n_output = n_output
         self.conv1 = GCNConv(num_features_xd, num_features_xd)
         self.conv2 = GCNConv(num_features_xd, num_features_xd*2)
@@ -20,22 +17,14 @@ class GCNNet(torch.nn.Module):
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
 
-        # protein sequence branch (1d conv)
-        # num_features_xt=27 (A-Z + gap), +1 for padding token = 28 total
-        self.embedding_xt = nn.Embedding(num_features_xt + 1, embed_dim)
-        # Conv1d expects [batch, channels, length]
-        self.conv_xt_1 = nn.Conv1d(in_channels=embed_dim, out_channels=n_filters, kernel_size=8)
-        self.fc1_xt = nn.Linear(32*78, output_dim)
+        self.protein_encoder = protein_encoder
 
-        # combined layers
         self.fc1 = nn.Linear(2*output_dim, 1024)
         self.fc2 = nn.Linear(1024, 512)
         self.out = nn.Linear(512, self.n_output)
 
     def forward(self, data):
-        # get graph input
         x, edge_index, batch = data.x, data.edge_index, data.batch
-        # get protein input
         target = data.target
 
         x = self.conv1(x, edge_index)
@@ -46,26 +35,16 @@ class GCNNet(torch.nn.Module):
 
         x = self.conv3(x, edge_index)
         x = self.relu(x)
-        x = gmp(x, batch)       # global max pooling
+        x = gmp(x, batch)
 
-        # flatten
         x = self.relu(self.fc_g1(x))
         x = self.dropout(x)
         x = self.fc_g2(x)
         x = self.dropout(x)
 
-        # 1d conv layers
-        embedded_xt = self.embedding_xt(target)
-        # Transpose for Conv1d: [batch, seq, embed] -> [batch, embed, seq]
-        embedded_xt = embedded_xt.permute(0, 2, 1)
-        conv_xt = self.conv_xt_1(embedded_xt)
-        # flatten
-        xt = conv_xt.view(-1, 32 * 78)
-        xt = self.fc1_xt(xt)
+        xt = self.protein_encoder(target)
 
-        # concat
         xc = torch.cat((x, xt), 1)
-        # add some dense layers
         xc = self.fc1(xc)
         xc = self.relu(xc)
         xc = self.dropout(xc)

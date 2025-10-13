@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DeepProteinCNN(nn.Module):
-    def __init__(self, num_features_xt=27, embed_dim=128, output_dim=128, dropout=0.1):
+    def __init__(self, num_features_xt=21, embed_dim=128, output_dim=128, dropout=0.1):
         super(DeepProteinCNN, self).__init__()
 
         self.embedding = nn.Embedding(num_features_xt + 1, embed_dim)
