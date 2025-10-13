@@ -48,7 +48,7 @@ def seq_cat(prot):
         x[i] = seq_dict.get(ch, 0)
     return x
 
-seq_voc = "ABCDEFGHIKLMNOPQRSTUVWXYZ-"
+seq_voc = "ACDEFGHIKLMNPQRSTVWY-"
 seq_dict = {v:(i+1) for i,v in enumerate(seq_voc)}
 seq_dict_len = len(seq_dict)
 max_seq_len = 85
