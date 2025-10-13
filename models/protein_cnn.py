@@ -3,10 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DeepProteinCNN(nn.Module):
-    def __init__(self, num_features_xt=21, embed_dim=128, output_dim=128, dropout=0.1):
+    def __init__(self, num_features_xt=21, embed_dim=128, output_dim=128,
+                 dropout=0.1, seq_len=85):
         super(DeepProteinCNN, self).__init__()
 
         self.embedding = nn.Embedding(num_features_xt + 1, embed_dim)
+        self.seq_len = seq_len
 
         self.conv1_1 = nn.Conv1d(embed_dim, 32, kernel_size=4)
         self.conv1_2 = nn.Conv1d(32, 32, kernel_size=4)
@@ -29,7 +31,7 @@ class DeepProteinCNN(nn.Module):
         self.fc = nn.Linear(self.fc_input_dim, output_dim)
 
     def _calc_fc_input_dim(self):
-        x = torch.zeros(1, 85)
+        x = torch.zeros(1, self.seq_len)
         x = self.embedding(x.long())
         x = x.permute(0, 2, 1)
 

@@ -73,8 +73,13 @@ datasets = [dataset_options[args.dataset]]
 modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, PNANet_Deep][args.model]
 model_st = modeling.__name__
 
-protein_models = [SimpleProteinCNN, DeepProteinCNN, DeepProteinCNN_BLOSUM]
-protein_model_st = protein_models[args.protein_model].__name__
+protein_model_classes = [SimpleProteinCNN, DeepProteinCNN, DeepProteinCNN_BLOSUM]
+protein_model_factories = [
+    lambda **kwargs: SimpleProteinCNN(**kwargs),
+    lambda **kwargs: DeepProteinCNN(**kwargs),
+    lambda **kwargs: DeepProteinCNN_BLOSUM(**kwargs),
+]
+protein_model_st = protein_model_classes[args.protein_model].__name__
 
 cuda_name = f"cuda:{args.cuda}"
 print('cuda_name:', cuda_name)
@@ -103,13 +108,27 @@ for dataset in datasets:
             'model': model_st,
             'dataset': dataset,
             'protein_model': protein_model_st,
-            'protein_model_index': args.protein_model
+            'protein_model_index': args.protein_model,
+            'protein_vocab_size': protein_vocab_size,
+            'protein_seq_len': protein_seq_len
         }
         exp_manager = ExperimentManager(model_st, dataset, hyperparams, args.exp_name)
         print(f'Experiment directory: {exp_manager.exp_dir}')
 
         train_data = TestbedDataset(root='data', dataset=dataset+'_train')
         test_data = TestbedDataset(root='data', dataset=dataset+'_test')
+
+        if hasattr(train_data.data, 'target'):
+            target_tensor = train_data.data.target
+        else:
+            target_tensor = torch.cat([sample.target for sample in train_data], dim=0)
+
+        protein_seq_len = target_tensor.size(-1)
+        protein_vocab_size = int(target_tensor.max().item()) if target_tensor.numel() > 0 else 0
+        protein_kwargs = {
+            'num_features_xt': protein_vocab_size,
+            'seq_len': protein_seq_len
+        }
 
         train_loader = DataLoader(train_data, batch_size=TRAIN_BATCH_SIZE, shuffle=True)
         test_loader = DataLoader(test_data, batch_size=TEST_BATCH_SIZE, shuffle=False)
@@ -122,10 +141,10 @@ for dataset in datasets:
                 print(f'Info: {model_st} uses its built-in protein branch; selection {protein_model_st} is ignored.')
                 model = modeling(deg=deg).to(device)
             else:
-                protein_encoder = protein_models[args.protein_model]()
+                protein_encoder = protein_model_factories[args.protein_model](**protein_kwargs)
                 model = modeling(deg=deg, protein_encoder=protein_encoder).to(device)
         else:
-            protein_encoder = protein_models[args.protein_model]()
+            protein_encoder = protein_model_factories[args.protein_model](**protein_kwargs)
             model = modeling(protein_encoder=protein_encoder).to(device)
 
         loss_fn = nn.MSELoss()
