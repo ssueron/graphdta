@@ -54,49 +54,6 @@ def predicting(model, device, loader):
     return total_labels.numpy().flatten(),total_preds.numpy().flatten()
 
 
-parser = argparse.ArgumentParser(description='Train GraphDTA model')
-parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning')
-parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=PNANet_Deep')
-parser.add_argument('protein_model', type=int, help='Protein encoder index: 0=SimpleProteinCNN, 1=DeepProteinCNN, 2=DeepProteinCNN_BLOSUM')
-parser.add_argument('cuda', type=int, default=0, help='CUDA device index')
-parser.add_argument('--resume', action='store_true', help='Resume from latest checkpoint')
-parser.add_argument('--exp-name', type=str, default=None, help='Custom experiment name')
-parser.add_argument('--batch-size', type=int, default=512, help='Batch size')
-parser.add_argument('--lr', type=float, default=0.0005, help='Learning rate')
-parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs')
-parser.add_argument('--save-freq', type=int, default=10, help='Save checkpoint every N epochs')
-parser.add_argument('--num-workers', type=int, default=None, help='DataLoader workers for training (auto if omitted)')
-parser.add_argument('--eval-num-workers', type=int, default=None, help='DataLoader workers for evaluation (auto if omitted)')
-
-args = parser.parse_args()
-
-dataset_options = ['davis_klifs', 'kiba_klifs', 'chembl_pretraining', 'pkis2_finetuning']
-datasets = [dataset_options[args.dataset]]
-
-modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, PNANet_Deep][args.model]
-model_st = modeling.__name__
-
-protein_model_classes = [SimpleProteinCNN, DeepProteinCNN, DeepProteinCNN_BLOSUM]
-protein_model_factories = [
-    lambda **kwargs: SimpleProteinCNN(**kwargs),
-    lambda **kwargs: DeepProteinCNN(**kwargs),
-    lambda **kwargs: DeepProteinCNN_BLOSUM(**kwargs),
-]
-protein_model_st = protein_model_classes[args.protein_model].__name__
-
-cuda_name = f"cuda:{args.cuda}"
-print('cuda_name:', cuda_name)
-print('protein_encoder:', protein_model_st)
-
-TRAIN_BATCH_SIZE = args.batch_size
-TEST_BATCH_SIZE = args.batch_size
-LR = args.lr
-LOG_INTERVAL = 20
-NUM_EPOCHS = args.epochs
-
-print('Learning rate: ', LR)
-print('Epochs: ', NUM_EPOCHS)
-
 def _parse_int_token(raw_value):
     if raw_value is None:
         return None
@@ -125,23 +82,71 @@ def select_num_workers(requested, gpus):
     workers = min(baseline, 12, headroom)
     return max(0, workers)
 
-visible_gpus = torch.cuda.device_count()
-train_num_workers = select_num_workers(args.num_workers, visible_gpus)
-if args.eval_num_workers is not None:
-    eval_num_workers = max(0, args.eval_num_workers)
-else:
-    eval_num_workers = min(train_num_workers, 4) if train_num_workers > 0 else 0
+def build_arg_parser():
+    parser = argparse.ArgumentParser(description='Train GraphDTA model')
+    parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning')
+    parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=PNANet_Deep')
+    parser.add_argument('protein_model', type=int, help='Protein encoder index: 0=SimpleProteinCNN, 1=DeepProteinCNN, 2=DeepProteinCNN_BLOSUM')
+    parser.add_argument('cuda', type=int, default=0, help='CUDA device index')
+    parser.add_argument('--resume', action='store_true', help='Resume from latest checkpoint')
+    parser.add_argument('--exp-name', type=str, default=None, help='Custom experiment name')
+    parser.add_argument('--batch-size', type=int, default=512, help='Batch size')
+    parser.add_argument('--lr', type=float, default=0.0005, help='Learning rate')
+    parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs')
+    parser.add_argument('--save-freq', type=int, default=10, help='Save checkpoint every N epochs')
+    parser.add_argument('--num-workers', type=int, default=None, help='DataLoader workers for training (auto if omitted)')
+    parser.add_argument('--eval-num-workers', type=int, default=None, help='DataLoader workers for evaluation (auto if omitted)')
+    return parser
 
-pin_memory = torch.cuda.is_available()
-print(f'DataLoader workers -> train: {train_num_workers}, eval: {eval_num_workers}, pin_memory: {pin_memory}')
+def main():
+    parser = build_arg_parser()
+    args = parser.parse_args()
 
-for dataset in datasets:
-    print('\nrunning on ', model_st + '_' + dataset )
-    processed_data_file_train = 'data/processed/' + dataset + '_train.pt'
-    processed_data_file_test = 'data/processed/' + dataset + '_test.pt'
-    if ((not os.path.isfile(processed_data_file_train)) or (not os.path.isfile(processed_data_file_test))):
-        print(f'please run: python create_data_unified.py {dataset}')
+    dataset_options = ['davis_klifs', 'kiba_klifs', 'chembl_pretraining', 'pkis2_finetuning']
+    datasets = [dataset_options[args.dataset]]
+
+    modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, PNANet_Deep][args.model]
+    model_st = modeling.__name__
+
+    protein_model_classes = [SimpleProteinCNN, DeepProteinCNN, DeepProteinCNN_BLOSUM]
+    protein_model_factories = [
+        lambda **kwargs: SimpleProteinCNN(**kwargs),
+        lambda **kwargs: DeepProteinCNN(**kwargs),
+        lambda **kwargs: DeepProteinCNN_BLOSUM(**kwargs),
+    ]
+    protein_model_st = protein_model_classes[args.protein_model].__name__
+
+    cuda_name = f"cuda:{args.cuda}"
+    print('cuda_name:', cuda_name)
+    print('protein_encoder:', protein_model_st)
+
+    TRAIN_BATCH_SIZE = args.batch_size
+    TEST_BATCH_SIZE = args.batch_size
+    LR = args.lr
+    LOG_INTERVAL = 20
+    NUM_EPOCHS = args.epochs
+
+    print('Learning rate: ', LR)
+    print('Epochs: ', NUM_EPOCHS)
+
+    visible_gpus = torch.cuda.device_count()
+    train_num_workers = select_num_workers(args.num_workers, visible_gpus)
+    if args.eval_num_workers is not None:
+        eval_num_workers = max(0, args.eval_num_workers)
     else:
+        eval_num_workers = min(train_num_workers, 4) if train_num_workers > 0 else 0
+
+    pin_memory = torch.cuda.is_available()
+    print(f'DataLoader workers -> train: {train_num_workers}, eval: {eval_num_workers}, pin_memory: {pin_memory}')
+
+    for dataset in datasets:
+        print('\nrunning on ', model_st + '_' + dataset )
+        processed_data_file_train = 'data/processed/' + dataset + '_train.pt'
+        processed_data_file_test = 'data/processed/' + dataset + '_test.pt'
+        if ((not os.path.isfile(processed_data_file_train)) or (not os.path.isfile(processed_data_file_test))):
+            print(f'please run: python create_data_unified.py {dataset}')
+            continue
+
         train_data = TestbedDataset(root='data', dataset=dataset+'_train')
         test_data = TestbedDataset(root='data', dataset=dataset+'_test')
 
@@ -249,3 +254,6 @@ for dataset in datasets:
         exp_manager.update_summary(ret, best_epoch, NUM_EPOCHS, duration_hours)
 
         print(f'\nTraining completed! Results saved to {exp_manager.exp_dir}')
+
+if __name__ == "__main__":
+    main()
