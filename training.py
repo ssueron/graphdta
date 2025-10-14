@@ -62,7 +62,7 @@ parser.add_argument('--resume', action='store_true', help='Resume from latest ch
 parser.add_argument('--exp-name', type=str, default=None, help='Custom experiment name')
 parser.add_argument('--batch-size', type=int, default=512, help='Batch size')
 parser.add_argument('--lr', type=float, default=0.0005, help='Learning rate')
-parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs')
+parser.add_argument('--epochs', type=int, default=500, help='Number of epochs')
 parser.add_argument('--save-freq', type=int, default=10, help='Save checkpoint every N epochs')
 
 args = parser.parse_args()
@@ -154,6 +154,8 @@ for dataset in datasets:
         best_mse = 1000
         best_ci = 0
         best_epoch = -1
+        patience = 25
+        patience_counter = 0
 
         if args.resume:
             checkpoint = exp_manager.load_checkpoint('latest')
@@ -179,12 +181,19 @@ for dataset in datasets:
                 best_epoch = epoch+1
                 best_mse = ret[1]
                 best_ci = ret[-1]
+                patience_counter = 0
                 print('rmse improved at epoch ', best_epoch, '; best_mse,best_ci:', best_mse, best_ci, model_st, dataset)
             else:
+                patience_counter += 1
                 print(ret[1], 'No improvement since epoch ', best_epoch, '; best_mse,best_ci:', best_mse, best_ci, model_st, dataset)
 
             if (epoch+1) % args.save_freq == 0 or is_best:
                 exp_manager.save_checkpoint(model, optimizer, epoch, ret, is_best=is_best)
+
+            if patience_counter >= patience:
+                print(f'Early stopping at epoch {epoch+1} (patience={patience})')
+                exp_manager.save_checkpoint(model, optimizer, epoch, ret, is_best=False)
+                break
 
         duration_hours = (time.time() - start_time) / 3600
         exp_manager.save_final_results(P, G, ret)
