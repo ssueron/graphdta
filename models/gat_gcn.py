@@ -29,7 +29,7 @@ class GAT_GCN(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
-        target = data.target
+        target = getattr(data, 'raw_sequence', None) if hasattr(data, 'raw_sequence') else data.target
 
         x = self.conv1(x, edge_index)
         x = self.relu(x)

@@ -37,7 +37,7 @@ class GATNet(torch.nn.Module):
         x = self.fc_g1(x)
         x = self.relu(x)
 
-        target = data.target
+        target = getattr(data, 'raw_sequence', None) if hasattr(data, 'raw_sequence') else data.target
         xt = self.protein_encoder(target)
 
         xc = torch.cat((x, xt), 1)

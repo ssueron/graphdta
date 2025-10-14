@@ -1,0 +1,18 @@
+{
+  "model": "GINConvNet",
+  "dataset": "davis_klifs",
+  "timestamp": "2025-10-14T17:03:52.476065",
+  "git_commit": "8cec7b9",
+  "hyperparameters": {
+    "lr": 0.0005,
+    "batch_size": 512,
+    "epochs": 500,
+    "model": "GINConvNet",
+    "dataset": "davis_klifs",
+    "protein_model": "ESM2ProteinEncoder",
+    "protein_model_index": 3,
+    "protein_vocab_size": 21,
+    "protein_seq_len": 85
+  },
+  "experiment_dir": "experiments/runs/2025-10-14_170352_GINConvNet_davis_klifs"
+}
