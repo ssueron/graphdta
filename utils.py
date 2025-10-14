@@ -3,7 +3,10 @@ import numpy as np
 from math import sqrt
 from scipy import stats
 from torch_geometric.data import InMemoryDataset
-from torch_geometric.loader import DataLoader
+try:
+    from torch_geometric.loader import DataLoader
+except ImportError:
+    from torch_geometric.data import DataLoader  # fallback for older PyG
 from torch_geometric import data as DATA
 import torch
 
