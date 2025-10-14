@@ -48,7 +48,10 @@ class GINConvNet(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
-        target = getattr(data, 'raw_sequence', None) if hasattr(data, 'raw_sequence') else data.target
+        if hasattr(data, 'raw_sequence') and isinstance(self.protein_encoder.__class__.__name__, str) and 'ESM2' in self.protein_encoder.__class__.__name__:
+            target = data.raw_sequence
+        else:
+            target = data.target
 
         x = F.relu(self.conv1(x, edge_index))
         x = self.bn1(x)

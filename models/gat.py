@@ -37,7 +37,10 @@ class GATNet(torch.nn.Module):
         x = self.fc_g1(x)
         x = self.relu(x)
 
-        target = getattr(data, 'raw_sequence', None) if hasattr(data, 'raw_sequence') else data.target
+        if hasattr(data, 'raw_sequence') and isinstance(self.protein_encoder.__class__.__name__, str) and 'ESM2' in self.protein_encoder.__class__.__name__:
+            target = data.raw_sequence
+        else:
+            target = data.target
         xt = self.protein_encoder(target)
 
         xc = torch.cat((x, xt), 1)
