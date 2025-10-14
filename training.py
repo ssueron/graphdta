@@ -3,6 +3,7 @@ import pandas as pd
 import sys, os
 import argparse
 import time
+import re
 from random import shuffle
 import torch
 import torch.nn as nn
@@ -64,6 +65,8 @@ parser.add_argument('--batch-size', type=int, default=512, help='Batch size')
 parser.add_argument('--lr', type=float, default=0.0005, help='Learning rate')
 parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs')
 parser.add_argument('--save-freq', type=int, default=10, help='Save checkpoint every N epochs')
+parser.add_argument('--num-workers', type=int, default=None, help='DataLoader workers for training (auto if omitted)')
+parser.add_argument('--eval-num-workers', type=int, default=None, help='DataLoader workers for evaluation (auto if omitted)')
 
 args = parser.parse_args()
 
@@ -93,6 +96,44 @@ NUM_EPOCHS = args.epochs
 
 print('Learning rate: ', LR)
 print('Epochs: ', NUM_EPOCHS)
+
+def _parse_int_token(raw_value):
+    if raw_value is None:
+        return None
+    match = re.search(r'\d+', str(raw_value))
+    return int(match.group()) if match else None
+
+def detect_available_cpus():
+    env_candidates = [
+        os.environ.get('SLURM_CPUS_PER_TASK'),
+        os.environ.get('SLURM_JOB_CPUS_PER_NODE'),
+        os.environ.get('SLURM_CPUS_ON_NODE')
+    ]
+    for raw in env_candidates:
+        parsed = _parse_int_token(raw)
+        if parsed:
+            return parsed
+    return os.cpu_count() or 1
+
+def select_num_workers(requested, gpus):
+    if requested is not None:
+        return max(0, requested)
+    cores = detect_available_cpus()
+    gpus = max(1, gpus)
+    baseline = max(2, cores // (2 * gpus))
+    headroom = cores - 1 if cores > 1 else 0
+    workers = min(baseline, 12, headroom)
+    return max(0, workers)
+
+visible_gpus = torch.cuda.device_count()
+train_num_workers = select_num_workers(args.num_workers, visible_gpus)
+if args.eval_num_workers is not None:
+    eval_num_workers = max(0, args.eval_num_workers)
+else:
+    eval_num_workers = min(train_num_workers, 4) if train_num_workers > 0 else 0
+
+pin_memory = torch.cuda.is_available()
+print(f'DataLoader workers -> train: {train_num_workers}, eval: {eval_num_workers}, pin_memory: {pin_memory}')
 
 for dataset in datasets:
     print('\nrunning on ', model_st + '_' + dataset )
@@ -130,8 +171,25 @@ for dataset in datasets:
         exp_manager = ExperimentManager(model_st, dataset, hyperparams, args.exp_name)
         print(f'Experiment directory: {exp_manager.exp_dir}')
 
-        train_loader = DataLoader(train_data, batch_size=TRAIN_BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(test_data, batch_size=TEST_BATCH_SIZE, shuffle=False)
+        train_loader_kwargs = {
+            'batch_size': TRAIN_BATCH_SIZE,
+            'shuffle': True,
+            'num_workers': train_num_workers,
+            'pin_memory': pin_memory
+        }
+        test_loader_kwargs = {
+            'batch_size': TEST_BATCH_SIZE,
+            'shuffle': False,
+            'num_workers': eval_num_workers,
+            'pin_memory': pin_memory
+        }
+        if train_num_workers > 0:
+            train_loader_kwargs['persistent_workers'] = True
+        if eval_num_workers > 0:
+            test_loader_kwargs['persistent_workers'] = True
+
+        train_loader = DataLoader(train_data, **train_loader_kwargs)
+        test_loader = DataLoader(test_data, **test_loader_kwargs)
 
         device = torch.device(cuda_name if torch.cuda.is_available() else "cpu")
 
