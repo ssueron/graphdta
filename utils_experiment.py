@@ -4,6 +4,19 @@ import csv
 from datetime import datetime
 import torch
 import subprocess
+import numpy as np
+
+def convert_to_serializable(obj):
+    """Convert numpy types to native Python types for JSON serialization."""
+    if isinstance(obj, (np.integer, np.floating)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: convert_to_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_to_serializable(item) for item in obj]
+    return obj
 
 class ExperimentManager:
     def __init__(self, model_name, dataset_name, hyperparams, exp_name=None):
@@ -47,7 +60,7 @@ class ExperimentManager:
             'dataset': self.dataset_name,
             'timestamp': datetime.now().isoformat(),
             'git_commit': self._get_git_commit(),
-            'hyperparameters': self.hyperparams,
+            'hyperparameters': convert_to_serializable(self.hyperparams),
             'experiment_dir': self.exp_dir
         }
         with open(self.metadata_path, 'w') as f:
@@ -94,11 +107,11 @@ class ExperimentManager:
         df.to_csv(os.path.join(self.result_dir, 'predictions.csv'), index=False)
 
         metrics_dict = {
-            'rmse': metrics[0],
-            'mse': metrics[1],
-            'pearson': metrics[2],
-            'spearman': metrics[3],
-            'ci': metrics[4]
+            'rmse': float(metrics[0]),
+            'mse': float(metrics[1]),
+            'pearson': float(metrics[2]),
+            'spearman': float(metrics[3]),
+            'ci': float(metrics[4])
         }
         with open(os.path.join(self.result_dir, 'metrics.json'), 'w') as f:
             json.dump(metrics_dict, f, indent=2)
@@ -113,8 +126,8 @@ class ExperimentManager:
             'dataset': self.dataset_name,
             'protein_model': self.hyperparams.get('protein_model', 'N/A'),
             'protein_model_index': self.hyperparams.get('protein_model_index', 'N/A'),
-            'best_mse': best_metrics[1],
-            'best_ci': best_metrics[4],
+            'best_mse': float(best_metrics[1]),
+            'best_ci': float(best_metrics[4]),
             'best_epoch': best_epoch,
             'total_epochs': total_epochs,
             'duration_hours': f'{duration_hours:.2f}',
