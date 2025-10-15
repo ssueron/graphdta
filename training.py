@@ -65,6 +65,7 @@ parser.add_argument('--batch-size', type=int, default=512, help='Batch size')
 parser.add_argument('--lr', type=float, default=0.0005, help='Learning rate')
 parser.add_argument('--epochs', type=int, default=500, help='Number of epochs')
 parser.add_argument('--save-freq', type=int, default=10, help='Save checkpoint every N epochs')
+parser.add_argument('--patience', type=int, default=25, help='Early stopping patience (0 to disable)')
 
 args = parser.parse_args()
 
@@ -156,7 +157,7 @@ for dataset in datasets:
         best_mse = 1000
         best_ci = 0
         best_epoch = -1
-        patience = 25
+        patience = args.patience
         patience_counter = 0
 
         if args.resume:
@@ -192,7 +193,7 @@ for dataset in datasets:
             if (epoch+1) % args.save_freq == 0 or is_best:
                 exp_manager.save_checkpoint(model, optimizer, epoch, ret, is_best=is_best)
 
-            if patience_counter >= patience:
+            if patience > 0 and patience_counter >= patience:
                 print(f'Early stopping at epoch {epoch+1} (patience={patience})')
                 exp_manager.save_checkpoint(model, optimizer, epoch, ret, is_best=False)
                 break
