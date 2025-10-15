@@ -7,7 +7,6 @@ import subprocess
 import numpy as np
 
 def convert_to_serializable(obj):
-    """Convert numpy types to native Python types for JSON serialization."""
     if isinstance(obj, (np.integer, np.floating)):
         return float(obj)
     elif isinstance(obj, np.ndarray):
@@ -18,17 +17,31 @@ def convert_to_serializable(obj):
         return [convert_to_serializable(item) for item in obj]
     return obj
 
+def abbreviate_name(name):
+    abbrev = {
+        'GINConvNet': 'GIN', 'GATNet': 'GAT', 'GAT_GCN': 'GATGCN',
+        'GCNNet': 'GCN', 'PNANet': 'PNA', 'PNANet_Deep': 'PNAD',
+        'SimpleProteinCNN': 'SCNN', 'DeepProteinCNN': 'DCNN',
+        'DeepProteinCNN_BLOSUM': 'DCNNB', 'ESM2ProteinEncoder': 'ESM2',
+        'davis_klifs': 'davis', 'kiba_klifs': 'kiba',
+        'chembl_pretraining': 'chembl', 'pkis2_finetuning': 'pkis2'
+    }
+    return abbrev.get(name, name)
+
 class ExperimentManager:
-    def __init__(self, model_name, dataset_name, hyperparams, exp_name=None):
+    def __init__(self, model_name, dataset_name, protein_name, hyperparams, exp_name=None):
         self.model_name = model_name
         self.dataset_name = dataset_name
         self.hyperparams = hyperparams
 
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H%M")
         if exp_name:
             exp_id = f"{timestamp}_{exp_name}"
         else:
-            exp_id = f"{timestamp}_{model_name}_{dataset_name}"
+            dataset_abbr = abbreviate_name(dataset_name)
+            model_abbr = abbreviate_name(model_name)
+            protein_abbr = abbreviate_name(protein_name)
+            exp_id = f"{timestamp}_{dataset_abbr}_{model_abbr}_{protein_abbr}"
 
         self.exp_dir = os.path.join('experiments', 'runs', exp_id)
         self.checkpoint_dir = os.path.join(self.exp_dir, 'checkpoints')

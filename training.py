@@ -129,7 +129,7 @@ for dataset in datasets:
             'protein_vocab_size': protein_vocab_size,
             'protein_seq_len': protein_seq_len
         }
-        exp_manager = ExperimentManager(model_st, dataset, hyperparams, args.exp_name)
+        exp_manager = ExperimentManager(model_st, dataset, protein_model_st, hyperparams, args.exp_name)
         print(f'Experiment directory: {exp_manager.exp_dir}')
 
         train_loader = DataLoader(train_data, batch_size=TRAIN_BATCH_SIZE, shuffle=True)
