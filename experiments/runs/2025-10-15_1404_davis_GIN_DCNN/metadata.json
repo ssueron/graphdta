@@ -1,0 +1,18 @@
+{
+  "model": "GINConvNet",
+  "dataset": "davis_klifs",
+  "timestamp": "2025-10-15T14:04:35.030740",
+  "git_commit": "33ae188",
+  "hyperparameters": {
+    "lr": 0.0005,
+    "batch_size": 512,
+    "epochs": 500,
+    "model": "GINConvNet",
+    "dataset": "davis_klifs",
+    "protein_model": "DeepProteinCNN",
+    "protein_model_index": 1,
+    "protein_vocab_size": 21,
+    "protein_seq_len": 85
+  },
+  "experiment_dir": "experiments/runs/2025-10-15_1404_davis_GIN_DCNN"
+}

@@ -16,6 +16,7 @@ from models.protein_cnn_simple import SimpleProteinCNN
 from models.protein_cnn import DeepProteinCNN
 from models.protein_cnn_blosum import DeepProteinCNN_BLOSUM
 from models.protein_esm2 import ESM2ProteinEncoder
+from models.protein_transformer import ProteinTransformer
 from utils import *
 from utils_experiment import ExperimentManager
 from utils_degree import get_or_compute_degree
@@ -57,7 +58,7 @@ def predicting(model, device, loader):
 parser = argparse.ArgumentParser(description='Train GraphDTA model')
 parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning')
 parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=PNANet_Deep')
-parser.add_argument('protein_model', type=int, help='Protein encoder index: 0=SimpleProteinCNN, 1=DeepProteinCNN, 2=DeepProteinCNN_BLOSUM, 3=ESM2ProteinEncoder')
+parser.add_argument('protein_model', type=int, help='Protein encoder index: 0=SimpleProteinCNN, 1=DeepProteinCNN, 2=DeepProteinCNN_BLOSUM, 3=ESM2ProteinEncoder, 4=ProteinTransformer')
 parser.add_argument('cuda', type=int, default=0, help='CUDA device index')
 parser.add_argument('--resume', action='store_true', help='Resume from latest checkpoint')
 parser.add_argument('--exp-name', type=str, default=None, help='Custom experiment name')
@@ -75,12 +76,13 @@ datasets = [dataset_options[args.dataset]]
 modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, PNANet_Deep][args.model]
 model_st = modeling.__name__
 
-protein_model_classes = [SimpleProteinCNN, DeepProteinCNN, DeepProteinCNN_BLOSUM, ESM2ProteinEncoder]
+protein_model_classes = [SimpleProteinCNN, DeepProteinCNN, DeepProteinCNN_BLOSUM, ESM2ProteinEncoder, ProteinTransformer]
 protein_model_factories = [
     lambda **kwargs: SimpleProteinCNN(**kwargs),
     lambda **kwargs: DeepProteinCNN(**kwargs),
     lambda **kwargs: DeepProteinCNN_BLOSUM(**kwargs),
     lambda **kwargs: ESM2ProteinEncoder(**kwargs),
+    lambda **kwargs: ProteinTransformer(**kwargs),
 ]
 protein_model_st = protein_model_classes[args.protein_model].__name__
 
