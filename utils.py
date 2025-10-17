@@ -61,10 +61,18 @@ class TestbedDataset(InMemoryDataset):
             smiles = xd[i]
             target = xt[i]
             labels = y[i]
-            c_size, features, edge_index = smile_graph[smiles]
-            GCNData = DATA.Data(x=torch.Tensor(features),
-                                edge_index=torch.LongTensor(edge_index).transpose(1, 0),
-                                y=torch.FloatTensor([labels]))
+            graph_data = smile_graph[smiles]
+            if len(graph_data) == 4:
+                c_size, features, edge_index, edge_attr = graph_data
+                GCNData = DATA.Data(x=torch.Tensor(features),
+                                    edge_index=torch.LongTensor(edge_index).transpose(1, 0),
+                                    edge_attr=torch.Tensor(edge_attr),
+                                    y=torch.FloatTensor([labels]))
+            else:
+                c_size, features, edge_index = graph_data
+                GCNData = DATA.Data(x=torch.Tensor(features),
+                                    edge_index=torch.LongTensor(edge_index).transpose(1, 0),
+                                    y=torch.FloatTensor([labels]))
             GCNData.target = torch.LongTensor([target])
             GCNData.__setitem__('c_size', torch.LongTensor([c_size]))
             if raw_sequences is not None:

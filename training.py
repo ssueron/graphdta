@@ -12,6 +12,9 @@ from models.gcn import GCNNet
 from models.ginconv import GINConvNet
 from models.pna import PNANet
 from models.pna_deep import PNANet_Deep
+from models.gine import GINENet
+from models.attentivefp import AttentiveFPNet
+from models.dmpnn import DMPNNNet
 from models.protein_cnn_simple import SimpleProteinCNN
 from models.protein_cnn import DeepProteinCNN
 from models.protein_cnn_blosum import DeepProteinCNN_BLOSUM
@@ -56,8 +59,8 @@ def predicting(model, device, loader):
 
 
 parser = argparse.ArgumentParser(description='Train GraphDTA model')
-parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning')
-parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=PNANet_Deep')
+parser.add_argument('dataset', type=int, help='Dataset index: 0=davis_klifs, 1=kiba_klifs, 2=chembl_pretraining, 3=pkis2_finetuning, 4=davis_klifs_edges, 5=kiba_klifs_edges, 6=chembl_pretraining_edges, 7=pkis2_finetuning_edges')
+parser.add_argument('model', type=int, help='Model index: 0=GINConvNet, 1=GATNet, 2=GAT_GCN, 3=GCNNet, 4=PNANet, 5=PNANet_Deep, 6=GINENet, 7=AttentiveFPNet, 8=DMPNNNet')
 parser.add_argument('protein_model', type=int, help='Protein encoder index: 0=SimpleProteinCNN, 1=DeepProteinCNN, 2=DeepProteinCNN_BLOSUM, 3=ESM2ProteinEncoder, 4=ProteinTransformer')
 parser.add_argument('cuda', type=int, default=0, help='CUDA device index')
 parser.add_argument('--resume', action='store_true', help='Resume from latest checkpoint')
@@ -70,10 +73,10 @@ parser.add_argument('--patience', type=int, default=25, help='Early stopping pat
 
 args = parser.parse_args()
 
-dataset_options = ['davis_klifs', 'kiba_klifs', 'chembl_pretraining', 'pkis2_finetuning']
+dataset_options = ['davis_klifs', 'kiba_klifs', 'chembl_pretraining', 'pkis2_finetuning', 'davis_klifs_edges', 'kiba_klifs_edges', 'chembl_pretraining_edges', 'pkis2_finetuning_edges']
 datasets = [dataset_options[args.dataset]]
 
-modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, PNANet_Deep][args.model]
+modeling = [GINConvNet, GATNet, GAT_GCN, GCNNet, PNANet, PNANet_Deep, GINENet, AttentiveFPNet, DMPNNNet][args.model]
 model_st = modeling.__name__
 
 protein_model_classes = [SimpleProteinCNN, DeepProteinCNN, DeepProteinCNN_BLOSUM, ESM2ProteinEncoder, ProteinTransformer]
