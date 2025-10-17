@@ -40,7 +40,7 @@ class AttentiveFPConv(nn.Module):
         return out
 
 class AttentiveFPNet(torch.nn.Module):
-    def __init__(self, n_output=1, num_features_xd=78, num_edge_features=6, output_dim=128, dropout=0.2, protein_encoder=None):
+    def __init__(self, n_output=1, num_features_xd=78, num_edge_features=7, output_dim=128, dropout=0.2, protein_encoder=None):
         super(AttentiveFPNet, self).__init__()
 
         dim = 64

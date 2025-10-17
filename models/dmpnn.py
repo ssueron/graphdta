@@ -41,7 +41,7 @@ class DMPNNConv(nn.Module):
         return x_out, messages
 
 class DMPNNNet(torch.nn.Module):
-    def __init__(self, n_output=1, num_features_xd=78, num_edge_features=6, output_dim=128, dropout=0.2, protein_encoder=None):
+    def __init__(self, n_output=1, num_features_xd=78, num_edge_features=7, output_dim=128, dropout=0.2, protein_encoder=None):
         super(DMPNNNet, self).__init__()
 
         hidden_dim = 64
@@ -76,7 +76,7 @@ class DMPNNNet(torch.nn.Module):
         if hasattr(data, 'edge_attr') and data.edge_attr is not None:
             edge_hidden = self.edge_init(data.edge_attr)
         else:
-            edge_attr = torch.ones((edge_index.size(1), 6), dtype=torch.float, device=x.device)
+            edge_attr = torch.ones((edge_index.size(1), 7), dtype=torch.float, device=x.device)
             edge_hidden = self.edge_init(edge_attr)
 
         x, edge_hidden = self.conv1(x, edge_index, edge_hidden)

@@ -7,7 +7,7 @@ from torch_geometric.nn import GINEConv, global_add_pool
 from .protein_cnn_simple import SimpleProteinCNN
 
 class GINENet(torch.nn.Module):
-    def __init__(self, n_output=1, num_features_xd=78, num_edge_features=6, output_dim=128, dropout=0.2, protein_encoder=None):
+    def __init__(self, n_output=1, num_features_xd=78, num_edge_features=7, output_dim=128, dropout=0.2, protein_encoder=None):
         super(GINENet, self).__init__()
 
         dim = 32
@@ -57,7 +57,7 @@ class GINENet(torch.nn.Module):
         if hasattr(data, 'edge_attr') and data.edge_attr is not None:
             edge_attr = self.edge_encoder(data.edge_attr)
         else:
-            edge_attr = self.edge_encoder(torch.ones((edge_index.size(1), 6), dtype=torch.float, device=x.device))
+            edge_attr = self.edge_encoder(torch.ones((edge_index.size(1), 7), dtype=torch.float, device=x.device))
 
         x = F.relu(self.conv1(x, edge_index, edge_attr))
         x = self.bn1(x)
